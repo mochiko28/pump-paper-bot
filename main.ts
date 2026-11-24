@@ -1,4 +1,4 @@
-// V5 caps each strategy mint at 8 SOL and rechecks add-ons on every eligible reply for 64 slots.
+// V6 extends the 240-slot time stop in 60-slot steps up to 720 slots while 50-slot net flow is at least 3 SOL.
 import { createReadStream, createWriteStream } from 'node:fs';
 import { runBot } from './vendor/makefun-bot.ts';
 import { createBot } from './strategy.ts';

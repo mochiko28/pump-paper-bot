@@ -4,7 +4,7 @@
 [![make.fun rank](https://make.fun/badge/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122/mochiko28/pump-paper-bot/rank.svg)](https://make.fun/competitions/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122)
 [![make.fun reward](https://make.fun/badge/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122/mochiko28/pump-paper-bot/reward.svg)](https://make.fun/competitions/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122)
 
-V5 is a deterministic TypeScript paper-trading bot for the make.fun Pump.fun Replay Sprint. It reconstructs wallet inventory and fee-inclusive average buy costs from recorded trades, then looks for continued buying with limited selling pressure.
+V6 is a deterministic TypeScript paper-trading bot for the make.fun Pump.fun Replay Sprint. It reconstructs wallet inventory and fee-inclusive average buy costs from recorded trades, then looks for continued buying with limited selling pressure.
 
 ## Run locally
 
@@ -28,6 +28,8 @@ Reserve bands include the lower bound and exclude the upper bound. Net buying us
 
 Early overhang is the estimated sell proceeds of profitable wallets among the first ten distinct buyers, as a share of real quote reserves. The dispersed setup requires the largest net buyer to contribute less than 35% of positive wallet net flow. The simulated spot drop must be below 25% for a sale by the largest holder and below 70% for a combined sale by wallets holding at a gain of at least 50%.
 
-Each strategy mint has an 8 SOL cap. During the 64-slot window starting at the first fill, the bot rechecks the entry signal on every reply for a held position with no pending order or exit signal. Add-ons can use the rolling signal on replies without a fresh trade in that mint. Each add-on is at least 0.05 SOL, and each buy respects the 1% real-reserve order cap. The bot exits after 240 slots or when spot falls 30% below its recorded level at the first fill. Once spot gains 40% from that reference, the trailing stop triggers on a 35% drop from the peak.
+Each strategy mint has an 8 SOL cap. During the 64-slot window starting at the first fill, the bot rechecks the entry signal on every reply for a held position with no pending order or exit signal. Add-ons can use the rolling signal on replies without a fresh trade in that mint. Each add-on is at least 0.05 SOL, and each buy respects the 1% real-reserve order cap.
+
+During the first 240 slots after the opening fill, the bot exits if spot falls 30% below its recorded level at that fill. Once spot gains 40% from that reference, the trailing stop triggers on a 35% drop from the peak. At the first reply at or after 240 slots, the bot extends the hold if net buying over the most recent 50 slots is at least 3 SOL. It renews the hold in 60-slot steps, up to 720 slots from the opening fill. During the extension, it exits on any reply where net buying falls below 3 SOL, spot drops 20% from the peak since extension began, or spot drops 10% from the initial extension mark. The initial mark and running peak carry across renewals.
 
 One-at-a-time qualification probes buy 0.012 SOL on positive-flow batches with 1.3–8 SOL in real reserves and seek a full exit at the first opportunity at least one slot after the buy fill. The probe program targets 22 distinct qualifying mints, counting strategy round trips.

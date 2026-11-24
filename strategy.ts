@@ -5,6 +5,11 @@ const POSITION_BUDGET = 8_000_000_000n;
 const ADD_MINIMUM = 50_000_000n;
 const BUILD_SLOTS = 64;
 const HOLD_SLOTS = 240;
+const EXTENSION_STEP_SLOTS = 60;
+const MAX_HOLD_SLOTS = 720;
+const EXTENSION_MIN_FLOW_SOL = 3;
+const EXTENSION_SPOT_STOP_LOSS = 0.10;
+const EXTENSION_TRAILING_STOP_LOSS = 0.20;
 const SPOT_STOP_LOSS = 0.30;
 const TRAIL_ARM_GAIN = 0.40;
 const TRAILING_STOP_LOSS = 0.35;
@@ -17,6 +22,7 @@ interface Trade {
   spent: bigint;
   firstFill?: { slot: number; spot: number };
   highRatio: number;
+  extension?: { mark: number; peak: number; untilAge: number };
   exit: boolean;
 }
 
@@ -32,6 +38,29 @@ function shouldEnter(signal: OwnershipSignal): boolean {
   }
   return reserveSol >= 50 && reserveSol < 65 && flowSol >= 8
     && (earlyOverhang < 0.20 || (exhaustion !== null && exhaustion >= 1.4 && exhaustion < 1.6));
+}
+
+function shouldExitAfterBaseHold(trade: Trade, book: OwnershipBook, slot: number, age: number): boolean {
+  if (age >= MAX_HOLD_SLOTS) return true;
+
+  const { spot } = book;
+  const extension = trade.extension;
+  if (extension) {
+    extension.peak = Math.max(extension.peak, spot);
+    if (spot <= extension.mark * (1 - EXTENSION_SPOT_STOP_LOSS)
+        || spot <= extension.peak * (1 - EXTENSION_TRAILING_STOP_LOSS)) return true;
+  }
+  const canExtend = book.signal(slot).flowSol >= EXTENSION_MIN_FLOW_SOL;
+  if (!canExtend) return true;
+
+  // Replies can skip renewal boundaries, so advance from the base hold to the next boundary.
+  if (!extension || age >= extension.untilAge) {
+    const nextStep = Math.floor((age - HOLD_SLOTS) / EXTENSION_STEP_SLOTS) + 1;
+    const untilAge = Math.min(MAX_HOLD_SLOTS, HOLD_SLOTS + nextStep * EXTENSION_STEP_SLOTS);
+    if (extension) extension.untilAge = untilAge;
+    else trade.extension = { mark: spot, peak: spot, untilAge };
+  }
+  return false;
 }
 
 export function createBot(): Bot {
@@ -114,10 +143,14 @@ export function createBot(): Bot {
         const age = slot - trade.firstFill.slot;
         const ratio = book.spot / trade.firstFill.spot;
         trade.highRatio = Math.max(trade.highRatio, ratio);
-        trade.exit ||= trade.kind === 'probe'
-          ? age >= 1
-          : age >= HOLD_SLOTS || ratio <= 1 - SPOT_STOP_LOSS
+        if (trade.kind === 'probe') {
+          trade.exit ||= age >= 1;
+        } else if (age >= HOLD_SLOTS) {
+          trade.exit ||= shouldExitAfterBaseHold(trade, book, slot, age);
+        } else {
+          trade.exit ||= ratio <= 1 - SPOT_STOP_LOSS
             || (trade.highRatio >= 1 + TRAIL_ARM_GAIN && ratio <= trade.highRatio * (1 - TRAILING_STOP_LOSS));
+        }
 
         if (awaitingFill) continue;
         if (trade.exit) {
