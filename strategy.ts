@@ -1,7 +1,7 @@
 import { BPS, type Bot, type OrderInput, type Pubkey } from './vendor/makefun-bot.ts';
 import { OwnershipBook, type OwnershipSignal } from './ownership.ts';
 
-const POSITION_BUDGET = 3_500_000_000n;
+const POSITION_BUDGET = 8_000_000_000n;
 const ADD_MINIMUM = 50_000_000n;
 const BUILD_SLOTS = 64;
 const HOLD_SLOTS = 240;

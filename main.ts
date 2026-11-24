@@ -1,4 +1,4 @@
-// V4 caps each strategy mint at 3.50 SOL and rechecks add-ons on every eligible reply for 64 slots.
+// V5 caps each strategy mint at 8 SOL and rechecks add-ons on every eligible reply for 64 slots.
 import { createReadStream, createWriteStream } from 'node:fs';
 import { runBot } from './vendor/makefun-bot.ts';
 import { createBot } from './strategy.ts';
