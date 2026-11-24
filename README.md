@@ -4,7 +4,7 @@
 [![make.fun rank](https://make.fun/badge/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122/mochiko28/pump-paper-bot/rank.svg)](https://make.fun/competitions/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122)
 [![make.fun reward](https://make.fun/badge/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122/mochiko28/pump-paper-bot/reward.svg)](https://make.fun/competitions/u-jackxyz72-pump-fun-replay-sprint-paper-bot-0b809122)
 
-A deterministic TypeScript paper-trading bot for the make.fun Pump.fun Replay Sprint.
+V2 is a deterministic TypeScript paper-trading bot for the make.fun Pump.fun Replay Sprint. It reconstructs wallet inventory and fee-inclusive average buy costs from recorded trades, then looks for continued buying with limited selling pressure.
 
 ## Run locally
 
@@ -18,6 +18,16 @@ Add `--worktree` to grade uncommitted files. For a quick protocol check, the har
 
 ## Strategy
 
-- Qualification probes buy 0.012 SOL on young curves with 2–20 SOL in real quote reserves and at least eight recorded trades. They close after 30 slots or a 10% move in either direction, with up to two probes outstanding and a target of 24 distinct qualifying round trips.
-- The completion rider enters when a curve crosses 65 SOL in real quote reserves and its 30-slot net recorded flow is positive. It adds each batch within the order cap, a 45% per-mint equity limit, a 0.5 SOL cash floor, and a maximum of three rider positions. It holds for the replay engine's completion close, with full exits below 50 SOL in real reserves or 25% below average entry.
-- A portfolio cash reserve of half the highest observed equity plus exit fees limits new spending under the competition's 50% drawdown guardrail.
+Reserve bands include the lower bound and exclude the upper bound. Net buying uses the most recent 50 slots, including the decision slot.
+
+| Real quote reserves | Entry conditions |
+| --- | --- |
+| 20–30 SOL | Net buying of at least 15 SOL and early overhang below 20%. |
+| 30–50 SOL | The same early-overhang setup, or net buying of at least 10 SOL with both dump-loss limits and dispersed buying. |
+| 50–65 SOL | Net buying of at least 8 SOL, with early overhang below 20% or a reserve-adjusted cost-to-spot ratio in `[1.4, 1.6)`. |
+
+Early overhang is the estimated sell proceeds of profitable wallets among the first ten distinct buyers, as a share of real quote reserves. The dispersed setup requires the largest net buyer to contribute less than 35% of positive wallet net flow. The simulated spot drop must be below 25% for a sale by the largest holder and below 70% for a combined sale by wallets holding at a gain of at least 50%.
+
+Each strategy position can build up to 2.75 SOL. During the first 64 slots after the first fill, add-ons require a fresh batch with positive net buying and a valid entry signal. Each buy respects the 1% real-reserve order cap. Exits use the recorded spot at the first fill as the reference. The bot exits after 240 slots, at a 20% loss, or on a 25% trailing drawdown once the price has gained 30%.
+
+One-at-a-time qualification probes buy 0.012 SOL on positive-flow batches with 1.3–8 SOL in real reserves and seek a full exit at the first opportunity at least one slot after the buy fill. The probe program targets 22 distinct qualifying mints, counting strategy round trips.
