@@ -1,7 +1,7 @@
 import { BPS, type Bot, type OrderInput, type Pubkey } from './vendor/makefun-bot.ts';
 import { OwnershipBook, type OwnershipSignal } from './ownership.ts';
 
-const POSITION_BUDGET = 2_750_000_000n;
+const POSITION_BUDGET = 3_500_000_000n;
 const ADD_MINIMUM = 50_000_000n;
 const BUILD_SLOTS = 64;
 const HOLD_SLOTS = 240;
@@ -124,10 +124,10 @@ export function createBot(): Bot {
           if (cash < txFee || orders.length >= caps.max_orders_per_batch) continue;
           orders.push({ side: 'sell', mint, token_amount: holding.token_amount, max_slippage_bps: 10_000 });
           cash -= txFee;
-        } else if (trade.kind === 'strategy' && age < BUILD_SLOTS && changed.has(mint)) {
-          const signal = book.signal(slot);
-          if (signal.slotFlowSol > 0 && shouldEnter(signal)) {
-            buy(mint, POSITION_BUDGET - trade.spent, ADD_MINIMUM);
+        } else if (trade.kind === 'strategy' && age < BUILD_SLOTS) {
+          const remaining = POSITION_BUDGET - trade.spent;
+          if (remaining >= ADD_MINIMUM && shouldEnter(book.signal(slot))) {
+            buy(mint, remaining, ADD_MINIMUM);
           }
         }
       }

@@ -1,4 +1,4 @@
-// V3 arms the trail at a 40% gain, with a 35% trailing stop and a 30% spot stop.
+// V4 caps each strategy mint at 3.50 SOL and rechecks add-ons on every eligible reply for 64 slots.
 import { createReadStream, createWriteStream } from 'node:fs';
 import { runBot } from './vendor/makefun-bot.ts';
 import { createBot } from './strategy.ts';
