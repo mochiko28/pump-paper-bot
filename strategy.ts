@@ -5,6 +5,9 @@ const POSITION_BUDGET = 2_750_000_000n;
 const ADD_MINIMUM = 50_000_000n;
 const BUILD_SLOTS = 64;
 const HOLD_SLOTS = 240;
+const SPOT_STOP_LOSS = 0.30;
+const TRAIL_ARM_GAIN = 0.40;
+const TRAILING_STOP_LOSS = 0.35;
 const QUALIFYING_SPEND = 10_000_000n;
 const PROBE_SIZE = 12_000_000n;
 const QUALIFYING_TARGET = 22;
@@ -113,8 +116,8 @@ export function createBot(): Bot {
         trade.highRatio = Math.max(trade.highRatio, ratio);
         trade.exit ||= trade.kind === 'probe'
           ? age >= 1
-          : age >= HOLD_SLOTS || ratio <= 0.80
-            || (trade.highRatio >= 1.30 && ratio <= trade.highRatio * 0.75);
+          : age >= HOLD_SLOTS || ratio <= 1 - SPOT_STOP_LOSS
+            || (trade.highRatio >= 1 + TRAIL_ARM_GAIN && ratio <= trade.highRatio * (1 - TRAILING_STOP_LOSS));
 
         if (awaitingFill) continue;
         if (trade.exit) {

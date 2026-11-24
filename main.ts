@@ -1,4 +1,4 @@
-// V2 scales into sustained buying using wallet-level flow and profit-taking risk.
+// V3 arms the trail at a 40% gain, with a 35% trailing stop and a 30% spot stop.
 import { createReadStream, createWriteStream } from 'node:fs';
 import { runBot } from './vendor/makefun-bot.ts';
 import { createBot } from './strategy.ts';
